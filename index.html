@@ -1,1 +1,826 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Iceberg Identification Workshop — Interactive Field Guide</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f9ff;
+      --card: #ffffff;
+      --ink: #10243b;
+      --muted: #5c6f86;
+      --accent: #1e78ff;
+      --accent-dark: #0a4db2;
+      --ice: #d7f0ff;
+      --warm: #fff4db;
+      --shadow: 0 18px 40px rgba(16, 36, 59, 0.12);
+    }
 
+    * {
+      box-sizing: border-box;
+      font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top, #ebf6ff 0%, var(--bg) 60%, #fefeff 100%);
+      color: var(--ink);
+    }
+
+    header {
+      padding: 2.5rem 6vw 1.5rem;
+      background: linear-gradient(140deg, #e1f4ff 0%, #f6fbff 70%);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 12px 30px rgba(16, 36, 59, 0.08);
+    }
+
+    header h1 {
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      margin: 0 0 0.3rem;
+    }
+
+    header p {
+      max-width: 70ch;
+      font-size: 1rem;
+      line-height: 1.6;
+      margin: 0;
+      color: var(--muted);
+    }
+
+    nav {
+      margin-top: 1.2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+
+    nav a {
+      text-decoration: none;
+      color: var(--ink);
+      background: var(--ice);
+      padding: 0.5rem 0.9rem;
+      border-radius: 999px;
+      font-weight: 600;
+      transition: background 0.2s ease, transform 0.1s ease;
+    }
+
+    nav a.active,
+    nav a:hover {
+      background: var(--accent);
+      color: white;
+      transform: translateY(-1px);
+    }
+
+    main {
+      padding: 2rem 6vw 4rem;
+      display: grid;
+      gap: 2rem;
+    }
+
+    .page {
+      display: none;
+      animation: fadeIn 0.35s ease;
+    }
+
+    .page.active {
+      display: grid;
+      gap: 2rem;
+    }
+
+    section {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 1.8rem 2rem;
+      box-shadow: var(--shadow);
+    }
+
+    section h2 {
+      margin-top: 0;
+      font-size: clamp(1.4rem, 2.5vw, 2rem);
+    }
+
+    .grid {
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    .grid.two {
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 0.3rem 0.8rem;
+      border-radius: 999px;
+      background: var(--ice);
+      font-weight: 600;
+      margin-bottom: 0.6rem;
+    }
+
+    .fact-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .fact-list li {
+      background: #f0f7ff;
+      border-left: 5px solid var(--accent);
+      padding: 0.8rem 1rem;
+      border-radius: 12px;
+      line-height: 1.5;
+    }
+
+    .note {
+      background: var(--warm);
+      border-left: 4px solid #ffbf59;
+      padding: 0.8rem 1rem;
+      border-radius: 12px;
+      line-height: 1.5;
+    }
+
+    .quiz-card {
+      background: #f3faff;
+      border-radius: 16px;
+      padding: 1.2rem;
+      border: 1px solid #cfe7ff;
+    }
+
+    .quiz-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.6rem;
+      margin-top: 0.8rem;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 0.6rem 1rem;
+      font-weight: 600;
+      background: var(--accent);
+      color: white;
+      cursor: pointer;
+      transition: transform 0.1s ease, background 0.2s ease;
+    }
+
+    button:hover {
+      background: var(--accent-dark);
+      transform: translateY(-1px);
+    }
+
+    button.secondary {
+      background: #cfe2ff;
+      color: var(--ink);
+    }
+
+    button.ghost {
+      background: white;
+      color: var(--ink);
+      border: 1px solid #cfe7ff;
+    }
+
+    .result {
+      margin-top: 0.8rem;
+      font-weight: 600;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.7rem;
+      border-radius: 999px;
+      background: #e6f0ff;
+      font-weight: 600;
+    }
+
+    .timeline {
+      border-left: 3px solid #c5e1ff;
+      padding-left: 1.2rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .timeline-item {
+      position: relative;
+    }
+
+    .timeline-item::before {
+      content: "";
+      position: absolute;
+      left: -1.55rem;
+      top: 0.4rem;
+      width: 12px;
+      height: 12px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 0 4px #e6f2ff;
+    }
+
+    .links a {
+      display: inline-block;
+      margin-right: 1rem;
+      color: var(--accent-dark);
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .links a:hover {
+      text-decoration: underline;
+    }
+
+    .toggle {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .toggle button.active {
+      background: var(--accent-dark);
+    }
+
+    .card-stack {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .card-stack article {
+      border-radius: 16px;
+      padding: 1rem;
+      background: #f6fbff;
+      border: 1px solid #e0efff;
+    }
+
+    .report-preview {
+      background: #f9fbff;
+      border: 1px dashed #b9d8ff;
+      padding: 1rem;
+      border-radius: 12px;
+      line-height: 1.6;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid #cfe0f5;
+      padding: 0.6rem 0.8rem;
+      font-size: 1rem;
+    }
+
+    textarea {
+      min-height: 120px;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .map-track {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      font-weight: 600;
+    }
+
+    .map-track span {
+      background: #e7f1ff;
+      padding: 0.3rem 0.6rem;
+      border-radius: 8px;
+    }
+
+    .size-slider {
+      width: 100%;
+      margin-top: 0.6rem;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 2rem 1rem 3rem;
+      color: var(--muted);
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="pill">Iceberg Identification Workshop</span>
+    <h1>Icebergs: Interactive Field Guide</h1>
+    <p>
+      A multi-page, interactive recap of the afternoon workshop — jump between pages, play the games, and share the
+      key takeaways with your colleague.
+    </p>
+    <nav>
+      <a href="#home" data-page-link>Home</a>
+      <a href="#fundamentals" data-page-link>Fundamentals</a>
+      <a href="#drift" data-page-link>Drift & Origins</a>
+      <a href="#classification" data-page-link>Classification Lab</a>
+      <a href="#observation" data-page-link>Observation</a>
+      <a href="#resources" data-page-link>Resources</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="page" data-page="home">
+      <section>
+        <h2>Welcome Aboard</h2>
+        <div class="grid two">
+          <div>
+            <p class="note">
+              This workshop focused on the life of icebergs: how they form, how they travel, and how we keep ships
+              safe. Use the navigation above to explore each mini-page.
+            </p>
+            <div class="card-stack">
+              <article>
+                <strong>Quick recap:</strong> Icebergs are glacier-born freshwater ice with at least 5 m above sea level.
+              </article>
+              <article>
+                <strong>Why it matters:</strong> Western Arctic ice islands now drift into new shipping lanes.
+              </article>
+              <article>
+                <strong>What to do:</strong> Everyone can report sightings with just location + size.
+              </article>
+            </div>
+          </div>
+          <div>
+            <h3>Pick a mini mission</h3>
+            <ul class="fact-list">
+              <li>Play the shape guessing game in <strong>Classification Lab</strong>.</li>
+              <li>Explore drift patterns in <strong>Drift & Origins</strong>.</li>
+              <li>Try writing a mock iceberg report in <strong>Observation</strong>.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="page" data-page="fundamentals">
+      <section>
+        <h2>Iceberg Fundamentals</h2>
+        <div class="grid two">
+          <div>
+            <ul class="fact-list">
+              <li><strong>Iceberg:</strong> Glacier-born freshwater ice with at least 5 m above sea level.</li>
+              <li><strong>Sea ice:</strong> Frozen seawater (not glacier-derived).</li>
+              <li><strong>Calving:</strong> The break-off process that creates icebergs.</li>
+              <li><strong>Hidden mass:</strong> 50–90% of an iceberg sits underwater.</li>
+            </ul>
+          </div>
+          <div>
+            <ul class="fact-list">
+              <li><strong>Color clue:</strong> Deep blue = dense ice with fewer air bubbles.</li>
+              <li><strong>Source glaciers:</strong> Petermann, Humboldt, Yancheng, and others in Greenland.</li>
+              <li><strong>Calving highlights:</strong> Large Petermann events in 2010 and 2012.</li>
+              <li><strong>Fun fact:</strong> Icebergs near oil platforms are sometimes towed away!</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Iceberg vs. Sea Ice</h2>
+        <p>Tap each button to compare. (Try both!)</p>
+        <div class="toggle">
+          <button class="secondary" data-toggle="iceberg">Iceberg</button>
+          <button class="secondary" data-toggle="seaice">Sea Ice</button>
+        </div>
+        <div class="card-stack" id="toggle-output"></div>
+      </section>
+    </div>
+
+    <div class="page" data-page="drift">
+      <section>
+        <h2>Drift & Origins</h2>
+        <div class="grid two">
+          <div class="timeline">
+            <div class="timeline-item"><strong>Birth:</strong> Calved from Greenland glaciers into Baffin Bay.</div>
+            <div class="timeline-item"><strong>Drift:</strong> Ride the Baffin Bay and Labrador currents for 2–3 years.</div>
+            <div class="timeline-item"><strong>Arrival:</strong> Reach Canadian waters & “Iceberg Alley.”</div>
+            <div class="timeline-item"><strong>Sea ice shield:</strong> Heavier sea ice can protect icebergs.</div>
+          </div>
+          <div>
+            <p class="note">
+              Western Arctic update: 2019–2023 warming triggered ice island fragments that drifted into new shipping
+              lanes, forcing updates (and sometimes removals) of traditional iceberg limit lines.
+            </p>
+            <div class="map-track">
+              <span>Greenland</span>
+              ➜ <span>Baffin Bay</span>
+              ➜ <span>Labrador Current</span>
+              ➜ <span>Iceberg Alley</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Drift Simulator</h2>
+        <p>Adjust the knobs to see how long an iceberg might survive in the currents.</p>
+        <div class="form-grid">
+          <div>
+            <label for="years">Years drifting (1–4)</label>
+            <input id="years" type="range" min="1" max="4" value="2" />
+          </div>
+          <div>
+            <label for="sea-ice">Sea ice coverage</label>
+            <select id="sea-ice">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+        </div>
+        <p class="report-preview" id="drift-output"></p>
+      </section>
+    </div>
+
+    <div class="page" data-page="classification">
+      <section>
+        <h2>Classification Lab</h2>
+        <div class="grid two">
+          <div class="quiz-card">
+            <div class="pill" id="shape-clue">Clue appears here…</div>
+            <p id="shape-description">Click “New Clue” to start the game. Try to identify the iceberg shape!</p>
+            <div class="quiz-buttons" id="shape-buttons"></div>
+            <div class="result" id="shape-result"></div>
+            <button class="secondary" id="new-clue">New Clue</button>
+          </div>
+          <div class="quiz-card">
+            <h3>Size Classifier</h3>
+            <p>Slide to choose height above sea level.</p>
+            <input class="size-slider" type="range" min="0" max="80" value="2" id="height-slider" />
+            <p>
+              Height: <strong><span id="height-value">2</span> m</strong> →
+              <span id="size-output" class="badge"></span>
+            </p>
+            <p class="note">
+              Growler: &lt;1 m tall. Bergy bit: 1–5 m. Icebergs: small, medium, large, very large (over 75 m tall).
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Shape Match Challenge</h2>
+        <p>Match each description to a shape. Try to get all three right!</p>
+        <div class="card-stack" id="match-zone"></div>
+        <button class="ghost" id="reset-match">Shuffle Descriptions</button>
+        <div class="result" id="match-result"></div>
+      </section>
+    </div>
+
+    <div class="page" data-page="observation">
+      <section>
+        <h2>Observation & Reporting</h2>
+        <div class="grid two">
+          <div>
+            <ul class="fact-list">
+              <li>Canadian Ice Service + US International Ice Patrol coordinate tracking.</li>
+              <li>Satellite imagery, direct observation, and public reports all help.</li>
+              <li>Reporting needs only location + size (anyone can report).</li>
+            </ul>
+          </div>
+          <div>
+            <ul class="fact-list">
+              <li>Iceberg monitoring intensified after the Titanic disaster.</li>
+              <li>Large, flat icebergs are preferred for scientific equipment placement.</li>
+              <li>Helicopter landings work best on medium-to-large flat icebergs.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Build a Sample Report</h2>
+        <p>Try making a quick report. Only location + size are required!</p>
+        <div class="form-grid">
+          <div>
+            <label for="report-location">Location</label>
+            <input id="report-location" type="text" placeholder="e.g., 48°N, 53°W" />
+          </div>
+          <div>
+            <label for="report-size">Size class</label>
+            <select id="report-size">
+              <option value="Growler">Growler</option>
+              <option value="Bergy bit">Bergy bit</option>
+              <option value="Small iceberg">Small iceberg</option>
+              <option value="Medium iceberg">Medium iceberg</option>
+              <option value="Large iceberg">Large iceberg</option>
+              <option value="Very large iceberg">Very large iceberg</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label for="report-notes">Notes (optional)</label>
+          <textarea id="report-notes" placeholder="Shape, drift direction, nearby sea ice…"></textarea>
+        </div>
+        <div class="report-preview" id="report-preview"></div>
+      </section>
+    </div>
+
+    <div class="page" data-page="resources">
+      <section>
+        <h2>Explore More (Canadian Resources)</h2>
+        <p class="links">
+          <a href="https://ice-glaces.ec.gc.ca" target="_blank" rel="noreferrer">Canadian Ice Service</a>
+          <a href="https://www.canada.ca/en/environment-climate-change/services/ice-forecasts-observations.html" target="_blank" rel="noreferrer">Ice Forecasts & Observations</a>
+          <a href="https://www.navcen.uscg.gov/?pageName=IIP" target="_blank" rel="noreferrer">International Ice Patrol</a>
+        </p>
+        <p class="note">
+          Next workshop focus: service products and online resources — a great time to explore these sites.
+        </p>
+      </section>
+
+      <section>
+        <h2>Workshop Takeaways</h2>
+        <ul class="fact-list">
+          <li>Western Arctic iceberg limits are evolving alongside climate change.</li>
+          <li>Anyone can report sightings; all observations are valuable.</li>
+          <li>Ice islands and large flat bergs are prime targets for science deployments.</li>
+        </ul>
+      </section>
+    </div>
+  </main>
+
+  <div class="footer">
+    Made for sharing workshop notes — stay curious and keep reporting sightings!
+  </div>
+
+  <script>
+    const pages = Array.from(document.querySelectorAll(".page"));
+    const navLinks = Array.from(document.querySelectorAll("[data-page-link]"));
+
+    function setActivePage(pageName) {
+      pages.forEach((page) => {
+        page.classList.toggle("active", page.dataset.page === pageName);
+      });
+      navLinks.forEach((link) => {
+        link.classList.toggle("active", link.getAttribute("href") === `#${pageName}`);
+      });
+    }
+
+    function handleHashChange() {
+      const pageName = window.location.hash.replace("#", "") || "home";
+      const validPage = pages.some((page) => page.dataset.page === pageName) ? pageName : "home";
+      setActivePage(validPage);
+    }
+
+    window.addEventListener("hashchange", handleHashChange);
+    handleHashChange();
+
+    const toggleOutput = document.getElementById("toggle-output");
+    const toggleButtons = document.querySelectorAll("[data-toggle]");
+    const toggleCards = {
+      iceberg: {
+        title: "Iceberg",
+        points: [
+          "Freshwater ice calved from glaciers.",
+          "At least 5 m above sea level; most of the mass is underwater.",
+          "Color shifts blue as the ice compresses and loses air bubbles.",
+        ],
+      },
+      seaice: {
+        title: "Sea Ice",
+        points: [
+          "Frozen seawater, not glacier-derived.",
+          "Often seasonal; forms and melts with ocean temperatures.",
+          "Can protect drifting icebergs by buffering them from waves.",
+        ],
+      },
+    };
+
+    function renderToggle(key) {
+      const info = toggleCards[key];
+      toggleOutput.innerHTML = `
+        <article>
+          <h3>${info.title}</h3>
+          <ul>
+            ${info.points.map((point) => `<li>${point}</li>`).join("")}
+          </ul>
+        </article>
+      `;
+      toggleButtons.forEach((button) => {
+        button.classList.toggle("active", button.dataset.toggle === key);
+      });
+    }
+
+    toggleButtons.forEach((button) => {
+      button.addEventListener("click", () => renderToggle(button.dataset.toggle));
+    });
+    renderToggle("iceberg");
+
+    const shapes = [
+      {
+        name: "Tabular",
+        clue: "Flat-topped, much longer than tall — often shows horizontal banding.",
+        detail: "Think of a floating table: wide, flat, and level on top.",
+      },
+      {
+        name: "Blocky",
+        clue: "Flat top with steep vertical sides.",
+        detail: "Looks like a chunky block with straight-ish walls.",
+      },
+      {
+        name: "Wedge",
+        clue: "Flat top, steep sides on one end, sloping on the other.",
+        detail: "A ramp-like profile with one sharp, high end.",
+      },
+      {
+        name: "Domed",
+        clue: "Smooth and rounded top — no sharp edges.",
+        detail: "A gentle hill of ice. Smooth, rounded silhouette.",
+      },
+      {
+        name: "Pinnacle",
+        clue: "Central spire or pyramid with one or more peaks.",
+        detail: "Pointy peaks are the big giveaway.",
+      },
+      {
+        name: "Drydock",
+        clue: "U-shaped slot eroded near the waterline, often with twin columns.",
+        detail: "Picture a U-cut notch at the water’s edge.",
+      },
+      {
+        name: "Ice Island",
+        clue: "Exceptionally large, flat-topped fragment from an ice shelf.",
+        detail: "Massive and flat — a floating platform.",
+      },
+    ];
+
+    const shapeClue = document.getElementById("shape-clue");
+    const shapeDescription = document.getElementById("shape-description");
+    const shapeButtons = document.getElementById("shape-buttons");
+    const shapeResult = document.getElementById("shape-result");
+    const newClueButton = document.getElementById("new-clue");
+
+    let currentShape = null;
+
+    function shuffle(array) {
+      return [...array].sort(() => Math.random() - 0.5);
+    }
+
+    function renderButtons() {
+      shapeButtons.innerHTML = "";
+      shuffle(shapes).forEach((shape) => {
+        const button = document.createElement("button");
+        button.textContent = shape.name;
+        button.addEventListener("click", () => checkAnswer(shape.name));
+        shapeButtons.appendChild(button);
+      });
+    }
+
+    function newClue() {
+      currentShape = shapes[Math.floor(Math.random() * shapes.length)];
+      shapeClue.textContent = `Clue: ${currentShape.clue}`;
+      shapeDescription.textContent = "Which shape matches this clue?";
+      shapeResult.textContent = "";
+    }
+
+    function checkAnswer(answer) {
+      if (!currentShape) return;
+      if (answer === currentShape.name) {
+        shapeResult.textContent = `✅ Correct! ${currentShape.detail}`;
+      } else {
+        shapeResult.textContent = `❄️ Not quite. Hint: ${currentShape.detail}`;
+      }
+    }
+
+    renderButtons();
+    newClueButton.addEventListener("click", newClue);
+    newClue();
+
+    const heightSlider = document.getElementById("height-slider");
+    const heightValue = document.getElementById("height-value");
+    const sizeOutput = document.getElementById("size-output");
+
+    function sizeCategory(height) {
+      if (height < 1) return "Growler";
+      if (height <= 5) return "Bergy bit";
+      if (height <= 15) return "Small iceberg";
+      if (height <= 45) return "Medium iceberg";
+      if (height <= 75) return "Large iceberg";
+      return "Very large iceberg";
+    }
+
+    function updateSize() {
+      const height = Number(heightSlider.value);
+      heightValue.textContent = height;
+      sizeOutput.textContent = sizeCategory(height);
+    }
+
+    heightSlider.addEventListener("input", updateSize);
+    updateSize();
+
+    const yearsInput = document.getElementById("years");
+    const seaIceInput = document.getElementById("sea-ice");
+    const driftOutput = document.getElementById("drift-output");
+
+    function updateDrift() {
+      const years = Number(yearsInput.value);
+      const seaIce = seaIceInput.value;
+      const protection =
+        seaIce === "high"
+          ? "Sea ice is dense — the iceberg is shielded and survives longer."
+          : seaIce === "medium"
+            ? "Moderate sea ice offers some protection, but melting is steady."
+            : "Low sea ice means more wave action and faster melt.";
+
+      driftOutput.textContent = `Drift plan: A ${years}-year journey from Greenland through Baffin Bay. ${
+        years >= 3 ? "Expect to reach Iceberg Alley." : "Some icebergs may not survive this long."
+      } ${protection}`;
+    }
+
+    yearsInput.addEventListener("input", updateDrift);
+    seaIceInput.addEventListener("change", updateDrift);
+    updateDrift();
+
+    const matchZone = document.getElementById("match-zone");
+    const matchResult = document.getElementById("match-result");
+    const resetMatch = document.getElementById("reset-match");
+
+    const matchPrompts = [
+      {
+        prompt: "A smooth rounded top with no sharp edges.",
+        answers: ["Domed", "Pinnacle", "Blocky"],
+        correct: "Domed",
+      },
+      {
+        prompt: "A U-shaped slot cut near the waterline.",
+        answers: ["Drydock", "Tabular", "Wedge"],
+        correct: "Drydock",
+      },
+      {
+        prompt: "A large, flat-topped fragment from an ice shelf.",
+        answers: ["Ice Island", "Wedge", "Blocky"],
+        correct: "Ice Island",
+      },
+    ];
+
+    function renderMatch() {
+      matchZone.innerHTML = "";
+      matchResult.textContent = "";
+      shuffle(matchPrompts).forEach((item, index) => {
+        const wrapper = document.createElement("article");
+        const label = document.createElement("p");
+        label.textContent = `${index + 1}. ${item.prompt}`;
+        const select = document.createElement("select");
+        select.innerHTML = item.answers
+          .map((answer) => `<option value="${answer}">${answer}</option>`)
+          .join("");
+        select.dataset.correct = item.correct;
+        wrapper.appendChild(label);
+        wrapper.appendChild(select);
+        matchZone.appendChild(wrapper);
+      });
+    }
+
+    function scoreMatch() {
+      const selects = Array.from(matchZone.querySelectorAll("select"));
+      const correct = selects.filter((select) => select.value === select.dataset.correct).length;
+      matchResult.textContent = `You matched ${correct} / ${selects.length} descriptions correctly.`;
+    }
+
+    matchZone.addEventListener("change", scoreMatch);
+    resetMatch.addEventListener("click", renderMatch);
+    renderMatch();
+
+    const reportLocation = document.getElementById("report-location");
+    const reportSize = document.getElementById("report-size");
+    const reportNotes = document.getElementById("report-notes");
+    const reportPreview = document.getElementById("report-preview");
+
+    function updateReport() {
+      const location = reportLocation.value || "(add a location)";
+      const size = reportSize.value;
+      const notes = reportNotes.value ? `Notes: ${reportNotes.value}` : "Notes: (none)";
+      reportPreview.textContent = `Report preview → Location: ${location} | Size: ${size}. ${notes}`;
+    }
+
+    reportLocation.addEventListener("input", updateReport);
+    reportSize.addEventListener("change", updateReport);
+    reportNotes.addEventListener("input", updateReport);
+    updateReport();
+  </script>
+</body>
+</html>
